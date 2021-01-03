@@ -111,11 +111,11 @@ export default class HttpStream extends Writable {
       })
 
       req.on('response', (res) => {
+        let body = Buffer.alloc(0)
+        res.on('data', (chunk) => {
+          body = Buffer.concat([body, chunk])
+        })
         if (res.statusCode >= 400) {
-          let body = Buffer.alloc(0)
-          res.on('data', (chunk) => {
-            body = Buffer.concat([body, chunk])
-          })
           res.on('end', () => {
             callback(
               new Error(
@@ -127,7 +127,10 @@ export default class HttpStream extends Writable {
           })
           res.on('error', callback)
         } else {
-          callback(null, url)
+          res.on('end', () => {
+            callback(null, url)
+          })
+          res.on('error', callback)
         }
       })
 
